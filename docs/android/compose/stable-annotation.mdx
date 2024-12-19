@@ -40,3 +40,27 @@
 |属性类型|可以包含var属性或可变属性,但是通常需要使用State或者MutableState来修饰这些属性|所有属性必须是val(只读),且属性本身也必须是不可变类型|
 |Compose优化|虽然优化的程度不如@Immuable,但是任然可以避免很多不必要的重组.Compose会根据状态变化的通知来决定是否需要重组|Compose可以进行的**最强**的优化,因为数据完全不会发生改变,从而可以最大程度的避免不必要的重组|
 
+:::danger
+**非常注意**  
+滥用Stable可能会导致Compose无法按照预期重组,比如下面的例子
+```kotlin
+@Stable
+class UnstableData(var value: Int) // 错误:value是一个var,但是Compose编译器不知道它的变化
+
+@Composable
+fun UnstableComposable() {
+    val data = remember { UnstableData(0) }
+    var counter by remember { mutableStateOf(0) }
+
+    Button(onClick = {
+        data.value++ 
+        // 这边直接修改了data的内部状态,但是Compose编译器  
+        // 不知道,导致在修改了data后UI无法按照预期地重组
+        counter++
+    }) {
+        Text("Value: ${data.value}, Counter: $counter")
+    }
+}
+```
+:::
+
